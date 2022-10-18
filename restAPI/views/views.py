@@ -22,9 +22,9 @@ class ProjectViewSet(ModelViewSet):
         queryset = Project.objects.all()
 
         # if we have a user, we filter queryset
-        if user := self.request.user.id:
+        if user := self.request.user:
             queryset = queryset.filter(contributors=user)
-        #     print(f'Nous accueillons {user.username}')
+            # print(f'Nous accueillons {user.email}')
         #
         # else:
         #     print(f'Utilisateur inconnu')

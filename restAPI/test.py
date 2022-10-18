@@ -1,5 +1,4 @@
-from rest_framework.response import Response
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse_lazy
 from rest_framework import status
 
@@ -11,12 +10,46 @@ def format_datetime(value):
     return value.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
-def display_request_info(response, info=""):
-    print(f"Je test la méthode {response.request['REQUEST_METHOD']} "
-          f"sur l'uri : {response.request['PATH_INFO']} {info}")
+def display_request_info(func):
+    def decorated(self, *args, **kwargs):
+        response = func(self, args, kwargs)
+        print(f"Je teste la méthode {func.__name__} "
+              f"sur l'uri : {response.request['PATH_INFO']} ")
+        print(response)
+        return response
+    return decorated
 
 
-class TestProjects(APITestCase):
+class APIClientForSoftDesk(APIClient):
+
+    @display_request_info
+    def get(self, path, data=None, follow=False, **extra):
+        return super().get(path, data=None, follow=False, **extra)
+
+    @display_request_info
+    def post(self, path, data=None, format=None, content_type=None,
+             follow=False, **extra):
+        return super().post(path, data=None, format=None, content_type=None,
+                            follow=False, **extra)
+
+    @display_request_info
+    def delete(self, path, data=None, format=None, content_type=None,
+               follow=False, **extra):
+        return super().delete(path, data=None, format=None, content_type=None,
+                              follow=False, **extra)
+
+    @display_request_info
+    def put(self, path, data=None, format=None, content_type=None,
+            follow=False, **extra):
+        return super().put(path, data=None, format=None, content_type=None,
+                           follow=False, **extra)
+
+
+class APITestCaseForSoftDesk(APITestCase):
+    client_class = APIClientForSoftDesk
+
+
+class TestProjects(APITestCaseForSoftDesk):
     """for URI 3 to 7"""
 
     basename_url = "projects"
@@ -31,7 +64,6 @@ class TestProjects(APITestCase):
         project = Project.objects.create(**self.project_to_create)
 
         response = self.client.get(url)
-        display_request_info(response, self.__doc__)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         expected = [
@@ -49,7 +81,6 @@ class TestProjects(APITestCase):
         self.assertFalse(Project.objects.exists())
 
         response = self.client.post(url, data=self.project_to_create)
-        display_request_info(response, self.__doc__)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # check that there is one object
@@ -63,7 +94,6 @@ class TestProjects(APITestCase):
         project = Project.objects.create(**self.project_to_create)
 
         response = self.client.get(url)
-        display_request_info(response, self.__doc__)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -78,14 +108,12 @@ class TestProjects(APITestCase):
         self.assertEqual(expected, response.json())
 
         response = self.client.put(url, data={"title": "Nouveau titre"})
-        display_request_info(response, self.__doc__)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         expected["title"] = "Nouveau titre"
 
         response = self.client.get(url)
-        display_request_info(response, self.__doc__)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -125,7 +153,6 @@ class TestUser(APITestCase):
 
         # test adding one user
         response = self.client.post(url, data={'user_id': 1})
-        display_request_info(response, self.__doc__)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK,
                          msg="La requête post n'a pas été bien reçue.")
@@ -135,7 +162,6 @@ class TestUser(APITestCase):
 
         # test getting the list of contributors of one project
         response = self.client.get(url)
-        display_request_info(response, self.__doc__)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

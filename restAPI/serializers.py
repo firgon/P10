@@ -8,6 +8,10 @@ class ProjectListSerializer(ModelSerializer):
         model = Project
         fields = ['id', 'title']
 
+    # def create(self, validated_data):
+    #     validated_data['contributors'] = self.context['request']
+    #     return super().create(validated_data)
+
 
 class ProjectDetailSerializer(ModelSerializer):
     class Meta:

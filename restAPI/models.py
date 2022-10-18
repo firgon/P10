@@ -16,7 +16,7 @@ class Contributor(models.Model):
     user = models.ForeignKey(to=settings.AUTH_USER_MODEL,
                              # TODO use special method
                              #  to handle when author is delete
-                             on_delete=models.DO_NOTHING,
+                             on_delete=models.CASCADE,
                              related_name="contribute_to")
 
     project = models.ForeignKey(to='Project',
@@ -32,6 +32,9 @@ class Contributor(models.Model):
     class Meta:
         unique_together = ['user', 'project']
 
+    def __str__(self):
+        return f"{self.user} est {self.role} dans {self.project}"
+
 
 class Project(models.Model):
     """Class that groups several Issues"""
@@ -44,7 +47,9 @@ class Project(models.Model):
 
     title = models.CharField(
         max_length=128,
-        verbose_name="Titre"
+        verbose_name="Titre",
+        blank=False,
+        null=False
     )
     description = models.CharField(
         max_length=2048,
@@ -56,7 +61,7 @@ class Project(models.Model):
     )
     contributors = models.ManyToManyField(
         to=settings.AUTH_USER_MODEL,
-        through=Contributor,
+        through=Contributor
     )
     objects = models.Manager()  # Only useful for pycharm developing
 
