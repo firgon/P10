@@ -115,22 +115,22 @@ class Issue(models.Model):
         DONE = 3
 
     title = models.CharField(max_length=128, verbose_name="Titre")
-    description = models.CharField(max_length=2048, verbose_name="Description")
+    desc = models.CharField(max_length=2048, verbose_name="Description")
     tag = models.IntegerField(choices=Type.choices)
     priority = models.IntegerField(choices=Priority.choices)
-    project_id = models.ForeignKey(to=Project, on_delete=models.CASCADE,
-                                   null=True)
+    project = models.ForeignKey(to=Project, on_delete=models.CASCADE
+                                )
     status = models.IntegerField(choices=Status.choices, default=Status.TODO)
-    author_user_id = models.ForeignKey(to=settings.AUTH_USER_MODEL,
-                                       # TODO Decide
-                                       on_delete=models.DO_NOTHING,
-                                       related_name="created_by",
-                                       null=True)
-    assignee_user_id = models.ForeignKey(to=settings.AUTH_USER_MODEL,
-                                         # TODO Decide
-                                         on_delete=models.DO_NOTHING,
-                                         related_name="handled_by",
-                                         null=True)
+    author_user = models.ForeignKey(to=settings.AUTH_USER_MODEL,
+                                    # TODO Decide
+                                    on_delete=models.DO_NOTHING,
+                                    related_name="created_by"
+                                    )
+    assignee_user = models.ForeignKey(to=settings.AUTH_USER_MODEL,
+                                      # TODO Decide
+                                      on_delete=models.DO_NOTHING,
+                                      related_name="handled_by"
+                                      )
     created_time = models.DateTimeField(auto_now_add=True)
     objects = models.Manager()  # Only useful for pycharm developing
 
@@ -142,9 +142,9 @@ class Comment(models.Model):
     """Comment are created by users to comment Issues,
     one issue can have several comments"""
     description = models.CharField(max_length=2048, verbose_name="Description")
-    author_user_id = models.ForeignKey(to=settings.AUTH_USER_MODEL,
-                                       on_delete=models.CASCADE)
-    issue_id = models.ForeignKey(to=Issue, on_delete=models.CASCADE)
+    author_user = models.ForeignKey(to=settings.AUTH_USER_MODEL,
+                                    on_delete=models.CASCADE)
+    issue = models.ForeignKey(to=Issue, on_delete=models.CASCADE)
     created_time = models.DateTimeField(auto_now_add=True)
     objects = models.Manager()  # Only useful for pycharm developing
 

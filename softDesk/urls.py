@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 from rest_framework_simplejwt.views \
-    import TokenObtainPairView, TokenRefreshView
+    import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
 
 from restAPI.views.views import ProjectViewSet, \
     UsersFromProjectAPIView, \
@@ -34,12 +34,15 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     path('api-auth/', include('rest_framework.urls')),
-    path('api/token/',
+    path('login/',
          TokenObtainPairView.as_view(),
-         name='token_obtain_pair'),
-    path('api/token/refresh/',
-         TokenRefreshView.as_view(),
-         name='token_refresh'),
+         name='login'),
+    # path('login/refresh/',
+    #      TokenRefreshView.as_view(),
+    #      name='token_refresh'),
+    path('logout/',
+         TokenBlacklistView.as_view(),
+         name='logout'),
 
     # router for projects views (URI from 3 to 7)
     path('', include(router.urls)),
@@ -58,7 +61,7 @@ urlpatterns = [
          name='issues-from-project'),
     path('projects/<int:project_id>/issues/<int:issue_id>',
          ManageIssuesFromProjectAPIView.as_view(),
-         name='issues-from-project'),
+         name='issue-from-project'),
 
     # Comment views (URI 15 to 19)
     path('projects/<int:project_id>/issues/<int:issue_id>/comments/',
@@ -67,6 +70,6 @@ urlpatterns = [
     path('projects/<int:project_id>/issues/'
          '<int:issue_id>/comments/<int:comment_id>',
          ManageCommentsFromIssueFromProjectAPIView.as_view(),
-         name='issues-from-project'),
+         name='comment-from-issues-from-project'),
 
 ]

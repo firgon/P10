@@ -1,4 +1,3 @@
-import json
 from django.shortcuts import get_object_or_404
 from rest_framework import status, permissions
 from rest_framework.response import Response
@@ -15,26 +14,21 @@ from .generics_views import ManagingGenericAPIViewForSoftDesk, \
 
 
 class ProjectViewSet(ModelViewSet):
-    serializer_class = ProjectListSerializer
-    detail_serializer_class = ProjectDetailSerializer
+    serializer_class = ProjectDetailSerializer
+    list_serializer_class = ProjectListSerializer
 
     def get_queryset(self):
         queryset = Project.objects.all()
+        user = self.request.user
 
-        # if we have a user, we filter queryset
-        if user := self.request.user:
-            queryset = queryset.filter(contributors=user)
-            # print(f'Nous accueillons {user.email}')
-        #
-        # else:
-        #     print(f'Utilisateur inconnu')
+        queryset = queryset.filter(contributors=user)
 
         return queryset
 
     def get_serializer_class(self):
         # return detail serializer if detail asked
-        if self.action == 'retrieve':
-            return self.detail_serializer_class
+        if self.action == 'list':
+            return self.list_serializer_class
         else:
             return super().get_serializer_class()
 
@@ -43,13 +37,6 @@ class UsersFromProjectAPIView(AccessGenericAPIViewForSoftDesk):
     """This class gives actions POST and GET on '/projects/{id}/users/urls"""
     serializer = UserSerializer
     model_class = User
-
-    # def get(self, *args, **kwargs):
-    #     """with a get give all user from a project"""
-    #     project_id = kwargs.get('project_id', None)
-    #     queryset = User.objects.filter(project=project_id)
-    #     serializer = self.serializer(queryset, many=True)
-    #     return Response(serializer.data)
 
     def post(self, *args, **kwargs):
         """with a post, add a user in a project
@@ -109,15 +96,17 @@ class ManageIssuesFromProjectAPIView(ManagingGenericAPIViewForSoftDesk):
     serializer = IssueSerializer
     model_class = Issue
 
-    def put(self, *args, **kwargs):
-        """with a correct PUT request, modify an existing project
-        """
-        serializer = self.serializer(data=self.request.data)
-
 
 class CommentsFromIssueFromProjectAPIView(AccessGenericAPIViewForSoftDesk):
     serializer = CommentSerializer
     model_class = Comment
+
+    def get(self, *args, **kwargs):
+        """give a list of instances from a class linked to a project
+        can be Users, Issues..."""
+        queryset = self.model_class.objects.filter(issue=self.issue.id)
+        serializer = self.serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class ManageCommentsFromIssueFromProjectAPIView(

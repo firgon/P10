@@ -30,13 +30,8 @@ class GenericAPIViewForSoftDesk(APIView):
         issue_id = kwargs.get('issue_id', None)
         comment_id = kwargs.get('comment_id', None)
         user_id = kwargs.get('user_id', None)
-        # probably impossible
-        # if project_id is None:
-        #     response = Response({'fail': 'You should give project_id'},
-        #                         status=status.HTTP_400_BAD_REQUEST)
-        #     return self.answer(request, response, args, kwargs)
 
-        # project must always been given
+        # project must always have been given
         self.project = get_object_or_404(Project, id=project_id)
 
         # other data are optional
@@ -49,17 +44,11 @@ class GenericAPIViewForSoftDesk(APIView):
         if user_id is not None:
             self.user_to_add_or_delete = get_object_or_404(User, id=user_id)
 
-        # probably useless
-        # if not self.request.user.is_authenticated:
-        #     response = Response(status=status.HTTP_403_FORBIDDEN)
-        #     return self.answer(request, response, args, kwargs)
-
         return super().dispatch(request, *args, **kwargs)
 
 
 class AccessGenericAPIViewForSoftDesk(GenericAPIViewForSoftDesk):
-    """This class implements generics GET method
-    could implement POST method in future"""
+    """This class implements generics GET and POST methods"""
 
     def get(self, *args, **kwargs):
         """give a list of instances from a class linked to a project
@@ -69,19 +58,19 @@ class AccessGenericAPIViewForSoftDesk(GenericAPIViewForSoftDesk):
         return Response(serializer.data)
 
     def post(self, *args, **kwargs):
-        """with a POST request, add a issue in a project
+        """with a POST request, add a issue/comment in a project
         Response can be :
-        HTTP_200_OK : Issue added
-
+        HTTP_200_OK : Object added
         HTTP_400_BAD_REQUEST : project_id or user_id are missing"""
         serializer = self.serializer(data=self.request.data,
-                                     context={'user': self.user,
+                                     context={'user': self.request.user,
                                               'issue': self.issue,
-                                              'project': self.project})
+                                              'project': self.project},
+                                     partial=True)
 
         if serializer.is_valid():
             serializer.save()
-            return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
@@ -91,7 +80,7 @@ class ManagingGenericAPIViewForSoftDesk(GenericAPIViewForSoftDesk):
     """This class implements generics DELETE and PUT method"""
 
     def delete(self, *args, **kwargs):
-        """with a delete, remove the element at the end of the tree
+        """with a delete, remove the last element of the tree
         Response can be :
         HTTP_200_OK : deletion done
         HTTP_304_NOT_MODIFIED : user was not a contributor
@@ -112,3 +101,26 @@ class ManagingGenericAPIViewForSoftDesk(GenericAPIViewForSoftDesk):
 
         return Response(f'{element_to_delete} has been deleted',
                         status=status.HTTP_200_OK)
+
+    def put(self, *args, **kwargs):
+        """with a PUT update the last element of the tree"""
+        element_to_modify = None
+        # if comment is not None, modify it
+        if self.comment is not None:
+            element_to_modify = self.comment
+        # if issue is not None, modify it
+        elif self.issue is not None:
+            element_to_modify = self.issue
+        elif element_to_modify is None:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer(instance=element_to_modify,
+                                     data=self.request.data,
+                                     partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
