@@ -118,7 +118,8 @@ class Issue(models.Model):
     desc = models.CharField(max_length=2048, verbose_name="Description")
     tag = models.IntegerField(choices=Type.choices)
     priority = models.IntegerField(choices=Priority.choices)
-    project = models.ForeignKey(to=Project, on_delete=models.CASCADE
+    project = models.ForeignKey(to=Project, related_name="issues",
+                                on_delete=models.CASCADE
                                 )
     status = models.IntegerField(choices=Status.choices, default=Status.TODO)
     author_user = models.ForeignKey(to=settings.AUTH_USER_MODEL,

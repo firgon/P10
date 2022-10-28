@@ -16,6 +16,11 @@ class InitializeServer:
                       "email": "toto@gmail.com",
                       "password": "test"}
 
+    other_user = {"first_name": "test",
+                      "last_name": "test",
+                      "email": "test@gmail.com",
+                      "password": "test"}
+
     project_to_create = {"title": "Titre",
                          "description": "Ceci est une description",
                          "type": Project.Type.ANDROID}
@@ -39,7 +44,8 @@ class InitializeServer:
     }
 
     def __init__(self, client):
-        self.user = self.create_user()
+        self.user = self.create_user(self.user_to_create)
+        self.user2 = self.create_user(self.other_user)
         self.project = self.create_project(self.user)
         self.issue = self.create_issue(self.project, self.user)
         self.comment = self.create_comment(self.issue, self.user)
@@ -58,8 +64,8 @@ class InitializeServer:
         return len(comments)
 
     @classmethod
-    def create_user(cls) -> User:
-        return User.objects.create_user(**cls.user_to_create)
+    def create_user(cls, user) -> User:
+        return User.objects.create_user(**user)
 
     @classmethod
     def create_project(cls, user=None) -> Project:
@@ -91,13 +97,10 @@ class TestProjects(APITestCase):
 
     def test_list(self):
         """Test LIST projects URI 3"""
-
-        user = InitializeServer.create_user()
-        self.client.force_authenticate(user=user)
+        db = InitializeServer(self.client)
+        project = db.project
 
         url = reverse_lazy(self.basename_url + '-list')
-
-        project = InitializeServer.create_project(user)
 
         response = self.client.get(url)
 
@@ -115,8 +118,8 @@ class TestProjects(APITestCase):
         """test CREATE a project URI 4"""
         url = reverse_lazy(self.basename_url + '-list')
 
-        user = InitializeServer.create_user()
-        self.client.force_authenticate(user=user)
+        db = InitializeServer(self.client)
+        db.project.delete()
 
         # check that there is no object
         self.assertFalse(Project.objects.exists())
@@ -128,7 +131,7 @@ class TestProjects(APITestCase):
         # check that there is one object
         self.assertTrue(Project.objects.exists())
 
-        project = Project.objects.get(id=1)
+        project = Project.objects.get(id=2)
         expected_project = InitializeServer.project_to_create
 
         self.assertEqual(project.type, expected_project['type'])
@@ -140,10 +143,9 @@ class TestProjects(APITestCase):
         url = reverse_lazy(self.basename_url + '-detail',
                            kwargs={'pk': 1})
 
-        user = InitializeServer.create_user()
-        self.client.force_authenticate(user=user)
+        db = InitializeServer(self.client)
 
-        project = InitializeServer.create_project(user)
+        project = db.project
 
         response = self.client.get(url)
 
@@ -152,6 +154,7 @@ class TestProjects(APITestCase):
         expected = {
             'id': project.pk,
             'title': project.title,
+            'issues': [1],
             'description': project.description,
             'type': str(project.type),
             'contributors': [1]
@@ -356,7 +359,7 @@ class TestComment(APITestCase):
         self.assertEqual(db.comment_count(), 2)
 
     def test_delete(self):
-        """test DELETE on URI 18"""
+        """test DELETE COMMENT on URI 18"""
         db = InitializeServer(self.client)
 
         self.assertEqual(db.comment_count(), 1)
@@ -366,8 +369,9 @@ class TestComment(APITestCase):
                                    'issue_id': 1,
                                    'comment_id': 1})
 
-        response = self.client.delete(url)
+        self.assertEqual(db.comment.author_user, db.user)
 
+        response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertEqual(db.comment_count(), 0)

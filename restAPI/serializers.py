@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField
 
 from .models import Project, Issue, Comment, Contributor
 
@@ -10,6 +10,8 @@ class ProjectListSerializer(ModelSerializer):
 
 
 class ProjectDetailSerializer(ModelSerializer):
+    issues = PrimaryKeyRelatedField(many=True, read_only=True)
+
     class Meta:
         model = Project
         fields = '__all__'

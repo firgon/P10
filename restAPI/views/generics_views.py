@@ -86,12 +86,18 @@ class ManagingGenericAPIViewForSoftDesk(GenericAPIViewForSoftDesk):
         HTTP_304_NOT_MODIFIED : user was not a contributor
         """
         element_to_delete = None
-        # if comment is not None, delete it
-        if element_to_delete := self.comment:
-            element_to_delete.delete()
-        # if issue is not None, delete it
-        elif element_to_delete := self.issue:
-            element_to_delete.delete()
+
+        # if comment  or issue is not None, try to delete it
+        if element_to_delete := self.comment or self.issue:
+            # checks if user is author of the element
+            if element_to_delete.author_user != self.request.user:
+                return Response(f"You are not the Author of this element, "
+                                f"you can't delete it.",
+                                status=status.HTTP_403_FORBIDDEN)
+            else:
+                element_to_delete.delete()
+
+        # else if user is not None, try to delete it
         elif element_to_delete := self.user_to_add_or_delete:
             if not self.project.delete_contributor(element_to_delete):
                 return Response(f'{self.project.title} has not been modified, '
@@ -103,15 +109,16 @@ class ManagingGenericAPIViewForSoftDesk(GenericAPIViewForSoftDesk):
                         status=status.HTTP_200_OK)
 
     def put(self, *args, **kwargs):
-        """with a PUT update the last element of the tree"""
+        """with a PUT update the last element of the tree (Issue or Comment)"""
         element_to_modify = None
         # if comment is not None, modify it
-        if self.comment is not None:
-            element_to_modify = self.comment
-        # if issue is not None, modify it
-        elif self.issue is not None:
-            element_to_modify = self.issue
-        elif element_to_modify is None:
+        if element_to_modify := self.comment or self.issue:
+            # checks if user is author of the element
+            if element_to_modify.author_user != self.request.user:
+                return Response(f"You are not the Author of this element, "
+                                f"you can't modify it.",
+                                status=status.HTTP_403_FORBIDDEN)
+        else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.serializer(instance=element_to_modify,
