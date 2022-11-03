@@ -65,6 +65,12 @@ class Project(models.Model):
     )
     objects = models.Manager()  # Only useful for pycharm developing
 
+    @property
+    def author_user(self):
+        contributor = Contributor.objects.get(project=self,
+                                              role=Contributor.Role.author)
+        return contributor.user
+
     def __str__(self):
         return f'{self.title}'
 

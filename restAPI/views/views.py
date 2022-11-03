@@ -2,7 +2,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import IsAuthenticated
 
+from restAPI.permissions import IsOwnerOrReadOnly
 from authentication.models import User
 from authentication.serializers import UserSerializer
 from restAPI.models import Project, Issue, Comment
@@ -16,6 +18,7 @@ from .generics_views import ManagingGenericAPIViewForSoftDesk, \
 class ProjectViewSet(ModelViewSet):
     serializer_class = ProjectDetailSerializer
     list_serializer_class = ProjectListSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         queryset = Project.objects.all()
@@ -26,7 +29,7 @@ class ProjectViewSet(ModelViewSet):
         return queryset
 
     def get_serializer_class(self):
-        # return detail serializer if detail asked
+        # return list serializer if list asked
         if self.action == 'list':
             return self.list_serializer_class
         else:

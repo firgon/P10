@@ -15,7 +15,6 @@ class GenericAPIViewForSoftDesk(APIView):
     """
     Generic super class collecting data for its subclasses
     """
-    # permission_classes = [permissions.IsAuthenticated]
     serializer: ModelSerializer = None
     model_class: models.Model = None
     project: Project
@@ -31,8 +30,13 @@ class GenericAPIViewForSoftDesk(APIView):
         comment_id = kwargs.get('comment_id', None)
         user_id = kwargs.get('user_id', None)
 
-        # project must always have been given
-        self.project = get_object_or_404(Project, id=project_id)
+        req = self.initialize_request(request, *args, **kwargs)
+
+        # project must have been given, request.user must be a contributor
+        self.project = get_object_or_404(Project,
+                                         id=project_id,
+                                         contributors=req.user,
+                                         )
 
         # other data are optional
         if issue_id is not None:
@@ -106,7 +110,7 @@ class ManagingGenericAPIViewForSoftDesk(GenericAPIViewForSoftDesk):
                                 status=status.HTTP_304_NOT_MODIFIED)
 
         return Response(f'{element_to_delete} has been deleted',
-                        status=status.HTTP_200_OK)
+                        status=status.HTTP_204_NO_CONTENT)
 
     def put(self, *args, **kwargs):
         """with a PUT update the last element of the tree (Issue or Comment)"""

@@ -44,9 +44,6 @@ urlpatterns = [
     # path('login/refresh/',
     #      TokenRefreshView.as_view(),
     #      name='token_refresh'),
-    path('logout/',
-         TokenBlacklistView.as_view(),
-         name='logout'),
 
     # router for projects views (URI from 3 to 7)
     path('', include(router.urls)),

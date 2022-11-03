@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from authentication.models import User
-from .models import Project, Issue, Comment
+from .models import Project, Issue, Comment, Contributor
 
 
 def format_datetime(value):
@@ -71,13 +71,13 @@ class InitializeServer:
     def create_project(cls, user=None) -> Project:
         project = Project.objects.create(**cls.project_to_create)
         if user is not None:
-            project.add_contributor(user)
+            project.add_contributor(user, Contributor.Role.author)
         return project
 
     @classmethod
     def create_issue(cls, project=None, user=None) -> Issue:
         issue = Issue.objects.create(**cls.issue_to_create,
-                                     project_id=project.id,
+                                     project=project,
                                      author_user=user,
                                      assignee_user=user)
 
@@ -191,36 +191,46 @@ class TestUser(APITestCase):
         # initialize db
         db = InitializeServer(self.client)
 
-        # it should have no user on the project
-        self.assertEqual(user_count(), 1)
+        db.project.add_contributor(db.user2)
+
+        # it should have two users on the project
+        self.assertEqual(user_count(), 2)
 
         # test removing one user
         url = reverse_lazy('delete-user-from-project',
-                           kwargs={'project_id': 1, 'user_id': 1})
+                           kwargs={'project_id': 1, 'user_id': 2})
 
         response = self.client.delete(url)
 
-        self.assertEqual(user_count(), 0)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(user_count(), 1)
 
         # test adding one user
         url = reverse_lazy('users-from-project',
                            kwargs={'project_id': 1})
 
-        response = self.client.post(url, data={'user_id': 1})
+        response = self.client.post(url, data={'user_id': 2})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertEqual(user_count(), 1)
+        self.assertEqual(user_count(), 2)
 
         # test getting the list of contributors of one project
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertEqual(response.json(), [{
+        expected = [{
             'first_name': db.user.first_name,
             'last_name': db.user.last_name
-        }])
+        },
+            {
+            'first_name': db.user2.first_name,
+            'last_name': db.user2.last_name
+            }]
+
+        self.assertEqual(response.json(), expected)
 
 
 class TestIssue(APITestCase):
@@ -284,7 +294,7 @@ class TestIssue(APITestCase):
 
         response = self.client.delete(url)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         self.assertEqual(db.issue_count(), 0)
 
@@ -370,9 +380,8 @@ class TestComment(APITestCase):
                                    'comment_id': 1})
 
         self.assertEqual(db.comment.author_user, db.user)
-
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         self.assertEqual(db.comment_count(), 0)
 
