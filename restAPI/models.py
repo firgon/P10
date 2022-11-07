@@ -105,37 +105,44 @@ class Issue(models.Model):
     It has an Author, the user who has created the Issue, and
     an Assignee, the user who is in charge of handling this Issue"""
 
-    class Priority(models.IntegerChoices):
-        FAIBLE = 1
-        MOYENNE = 2
-        ELEVEE = 3
+    class Priority(models.TextChoices):
+        FAIBLE = 'Low'
+        MOYENNE = 'Medium'
+        ELEVEE = 'High'
 
-    class Type(models.IntegerChoices):
-        BUG = 3
-        TASK = 2
-        IMPROVEMENT = 1
+    class Type(models.TextChoices):
+        BUG = 'Bug'
+        TASK = 'Task'
+        IMPROVEMENT = 'Improvement'
 
-    class Status(models.IntegerChoices):
-        TODO = 1
-        ON_GOING = 2
-        DONE = 3
+    class Status(models.TextChoices):
+        TODO = 'To do'
+        ON_GOING = 'On going'
+        DONE = 'Done'
 
     title = models.CharField(max_length=128, verbose_name="Titre")
     desc = models.CharField(max_length=2048, verbose_name="Description")
-    tag = models.IntegerField(choices=Type.choices)
-    priority = models.IntegerField(choices=Priority.choices)
+    tag = models.CharField(verbose_name="tag",
+                           choices=Type.choices,
+                           max_length=128)
+    priority = models.CharField(verbose_name="Priorité",
+                                choices=Priority.choices,
+                                max_length=128
+                                )
     project = models.ForeignKey(to=Project, related_name="issues",
                                 on_delete=models.CASCADE
                                 )
-    status = models.IntegerField(choices=Status.choices, default=Status.TODO)
+    status = models.CharField(choices=Status.choices,
+                              default=Status.TODO,
+                              max_length=128)
     author_user = models.ForeignKey(to=settings.AUTH_USER_MODEL,
-                                    # TODO Decide
-                                    on_delete=models.DO_NOTHING,
+                                    # TODO can be improved
+                                    on_delete=models.CASCADE,
                                     related_name="created_by"
                                     )
     assignee_user = models.ForeignKey(to=settings.AUTH_USER_MODEL,
-                                      # TODO Decide
-                                      on_delete=models.DO_NOTHING,
+                                      # TODO can be improved
+                                      on_delete=models.CASCADE,
                                       related_name="handled_by"
                                       )
     created_time = models.DateTimeField(auto_now_add=True)

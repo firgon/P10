@@ -37,7 +37,7 @@ class ProjectViewSet(ModelViewSet):
 
 
 class UsersFromProjectAPIView(AccessGenericAPIViewForSoftDesk):
-    """This class gives actions POST and GET on '/projects/{id}/users/urls"""
+    """This class gives actions POST and GET on '/projects/{id}/users urls"""
     serializer = UserSerializer
     model_class = User
 
@@ -57,13 +57,13 @@ class UsersFromProjectAPIView(AccessGenericAPIViewForSoftDesk):
         user_to_add = get_object_or_404(User, id=user_id)
 
         if self.project.add_contributor(user_to_add):
-            return Response(f'{user_to_add.username} '
+            return Response(f'{user_to_add} '
                             f'have been added to '
                             f'{self.project.title}',
                             status=status.HTTP_200_OK)
         else:
             # probably because user_to_add was already a contributor
-            return Response(f'Nothing has changed, {user_to_add.username} was '
+            return Response(f'Nothing has changed, {user_to_add} was '
                             f'probably already a contributor '
                             f'to {self.project.title}',
                             status=status.HTTP_304_NOT_MODIFIED)
