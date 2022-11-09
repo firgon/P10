@@ -118,6 +118,6 @@ class ManageCommentsFromIssueFromProjectAPIView(
     model_class = Comment
 
     def get(self, *args, **kwargs):
-        """give data on 1 comment corresponding to id furnished"""
+        """give detail view on 1 comment corresponding to id furnished"""
         serializer = self.serializer(self.comment)
         return Response(serializer.data)

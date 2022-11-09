@@ -30,7 +30,7 @@ From your installation folder (P10):
 
 2. Enjoy the API !   
 You can access the complete URIs documentation on Postman: 
-[ici](https://documenter.getpostman.com/view/21659102/2s8YY9wScu)
+[here](https://documenter.getpostman.com/view/21659102/2s8YY9wScu)
 
 
 ## Technologies
