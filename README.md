@@ -15,6 +15,12 @@ You will need Python and Git installed on your device.
 From your installation folder (P10):   
 `pip install -r requirements.txt`
 
+3. Add your Django Secret Key   
+In your installation folder (P10) add a file named .env
+with one line :   
+SECRET_KEY = '<your_django_secret_key>'   
+(you can generate a django secret key with tools like : https://miniwebtool.com/fr/django-secret-key-generator/)
+
 ## Tests
 You can check everything is ok by :
 1. Launching tests  
